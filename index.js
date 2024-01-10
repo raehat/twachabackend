@@ -4,17 +4,14 @@ const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const bcrypt = require('bcrypt');
 const mongoose = require('mongoose');
+const dotenv = require('dotenv');   
+
+dotenv.config();
 
 const app = express();
 const port = 3000;
 
-// MongoDB configuration
-const username = 'raehat';
-const password = 'raehat';
-const clusterName = 'cluster0';
-const dbName = 'skinkmmapp';
-
-const mongoURI = `mongodb+srv://raehat:raehat@cluster0.s1sqi.mongodb.net/?retryWrites=true&w=majority`;
+const mongoURI = process.env.MONGO_URI;
 
 mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => {
@@ -26,10 +23,10 @@ mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
 
 // Nodemailer configuration
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  service: process.env.EMAIL_SERVICE,
   auth: {
-    user: 'axbotaxelar@gmail.com',
-    pass: 'ihrlocznakgzgtbd'
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASSWORD
   }
 });
 
