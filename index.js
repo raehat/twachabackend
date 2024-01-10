@@ -71,6 +71,10 @@ function generateOtp() {
 
 app.use(bodyParser.json());
 
+app.get('/', (req, res) => {
+  return 'hello'
+})
+
 app.post('/signup', async (req, res) => {
   const { email, password } = req.body;
 
