@@ -41,7 +41,11 @@ const unverifiedUserSchema = new mongoose.Schema({
 const verifiedUserSchema = new mongoose.Schema({
   email: String,
   password: String,
-  // Add other fields as needed
+  scans: [{
+    imageBase64: String,
+    analysisResult: String,
+    date: String
+  }]
 });
 
 const UnverifiedUser = mongoose.model('UnverifiedUser', unverifiedUserSchema);
@@ -71,8 +75,32 @@ function generateOtp() {
 
 app.use(bodyParser.json());
 
-app.get('/', (req, res) => {
-  res.send('hello');
+app.post('/new_scan_added', async (req, res) => {
+  try {
+    const { email, imageBase64, analysisResult } = req.body;
+
+    if (!email || !imageBase64 || !analysisResult) {
+      return res.status(400).json({ error: 'Invalid JSON data' });
+    }
+
+    // Find the user in the collection
+    const user = await VerifiedUser.findOne({ email: email });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    // Add the new scan to the scans collection
+    user.scans.push({ imageBase64, analysisResult, date: formatDate(new Date()) });
+
+    // Save the updated user document
+    await user.save();
+
+    return res.json({ message: 'New scan added successfully.' });
+  } catch (error) {
+    console.error('Error in new_scan_added:', error.message);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 app.post('/signup', async (req, res) => {
@@ -256,6 +284,13 @@ app.get('/protected', (req, res) => {
     return res.json({ logged_in_as: decoded.email });
   });
 });
+
+const formatDate = (date) => {
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear().toString().slice(-2);
+  return `${day}/${month}/${year}`;
+};
 
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
