@@ -5,6 +5,8 @@ const nodemailer = require('nodemailer');
 const bcrypt = require('bcrypt');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');   
+const multer = require('multer');
+const upload = multer(); 
 
 dotenv.config();
 
@@ -75,12 +77,13 @@ function generateOtp() {
 
 app.use(bodyParser.json());
 
-app.post('/new_scan_added', async (req, res) => {
+app.post('/new_scan_added', upload.single('image'), async (req, res) => {
   try {
-    const { email, imageBase64, analysisResult } = req.body;
+    const { email, analysisResult } = req.body;
+    const imageBase64 = req.file.buffer.toString('base64');
 
     if (!email || !imageBase64 || !analysisResult) {
-      return res.status(400).json({ error: 'Invalid JSON data' });
+      return res.status(400).json({ error: 'Invalid form data' });
     }
 
     // Find the user in the collection
@@ -99,6 +102,35 @@ app.post('/new_scan_added', async (req, res) => {
     return res.json({ message: 'New scan added successfully.' });
   } catch (error) {
     console.error('Error in new_scan_added:', error.message);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/get_all_scans', async (req, res) => {
+  try {
+    const { email } = req.query;
+
+    if (!email) {
+      return res.status(400).json({ error: 'Email parameter is required.' });
+    }
+
+    // Find the user in the collection
+    const user = await VerifiedUser.findOne({ email: email });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    // Get all scans for the user
+    const allScans = user.scans.map(scan => ({
+      imageBase64: scan.imageBase64,
+      analysisResult: scan.analysisResult,
+      date: scan.date
+    }));
+
+    return res.json({ scans: allScans });
+  } catch (error) {
+    console.error('Error in get_all_scans:', error.message);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -291,7 +323,3 @@ const formatDate = (date) => {
   const year = date.getFullYear().toString().slice(-2);
   return `${day}/${month}/${year}`;
 };
-
-app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
-});
