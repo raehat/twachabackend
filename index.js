@@ -323,3 +323,7 @@ const formatDate = (date) => {
   const year = date.getFullYear().toString().slice(-2);
   return `${day}/${month}/${year}`;
 };
+
+app.listen(port, () => {
+  console.log(`Server running on http://localhost:${port}`);
+});
